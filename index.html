@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>구랩 연구 원장</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+ :root{color-scheme:light}
+ *{box-sizing:border-box}
+ body{margin:0;background:#f6f8fa;color:#1c2430;font-size:14px;
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",sans-serif}
+ .wrap{max-width:1100px;margin:0 auto;padding:24px 20px 70px}
+ header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+ h1{font-size:22px;margin:0;letter-spacing:-.4px}
+ .save-state{margin-left:auto;font-size:12px;padding:5px 12px;border-radius:999px;
+   background:#eef1f5;color:#6b7684;transition:.2s}
+ .save-state.ok{background:#e6f5ee;color:#1f7a5c}
+ .save-state.busy{background:#fdf3e0;color:#a8791a}
+ .save-state.err{background:#fdeceb;color:#c23b28;font-weight:600}
+ .sub{color:#6b7684;font-size:12.5px;margin-bottom:16px}
+ .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:11px;margin-bottom:18px}
+ .kpi{background:#fff;border:1px solid #e3e7ec;border-radius:11px;padding:13px 16px}
+ .kl{font-size:11.5px;color:#6b7684;margin-bottom:4px}
+ .kv{font-size:27px;font-weight:700;letter-spacing:-1px}
+ .row{display:grid;grid-template-columns:1.15fr 1fr;gap:13px;margin-bottom:18px}
+ @media(max-width:760px){.row{grid-template-columns:1fr}}
+ .card{background:#fff;border:1px solid #e3e7ec;border-radius:11px;padding:15px 17px}
+ .card h2{font-size:12.5px;margin:0 0 11px;color:#4a5563;font-weight:600}
+ .chart-box{position:relative;height:210px}
+ .tabs{display:flex;gap:6px;margin-bottom:12px}
+ .tab{padding:7px 15px;border-radius:9px 9px 0 0;border:1px solid transparent;
+   background:none;cursor:pointer;font-size:13px;color:#6b7684;font-weight:600}
+ .tab.on{background:#fff;border-color:#e3e7ec;border-bottom-color:#fff;color:#1c2430}
+ .tools{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:11px}
+ input,select,textarea{background:#fff;border:1px solid #d5dbe3;border-radius:8px;
+   padding:7px 10px;color:#1c2430;font-size:13px;font-family:inherit}
+ input:focus,select:focus{outline:none;border-color:#3d8fd4}
+ #q{flex:1;min-width:180px}
+ .btn{background:#1c2430;color:#fff;border:none;border-radius:8px;padding:8px 15px;
+   font-size:13px;font-weight:600;cursor:pointer}
+ .btn:hover{background:#2d3846} .btn:disabled{opacity:.45;cursor:not-allowed}
+ .btn.ghost{background:#fff;color:#4a5563;border:1px solid #d5dbe3}
+ .btn.sm{padding:5px 10px;font-size:11.5px}
+ .btn.pub{background:#1f7a5c} .btn.pub:hover{background:#166147}
+ table{width:100%;border-collapse:collapse;font-size:13px}
+ th{text-align:left;color:#8a94a3;font-size:11px;font-weight:600;padding:7px 8px;
+   border-bottom:1px solid #e3e7ec;white-space:nowrap}
+ td{padding:9px 8px;border-bottom:1px solid #eef1f5;vertical-align:top;line-height:1.45}
+ tr:hover td{background:#f9fbfd}
+ .no{color:#a8b0bb;font-size:11px;width:38px;font-variant-numeric:tabular-nums}
+ .ttl{max-width:420px}
+ .tag{display:inline-block;font-size:10px;padding:1px 6px;border-radius:4px;
+   margin:2px 3px 0 0;font-weight:600}
+ .badge{font-size:11px;padding:3px 8px;border-radius:6px;font-weight:600}
+ select.st{font-size:11.5px;padding:4px 7px;font-weight:600}
+ .jr{width:130px;font-size:11.5px;padding:4px 7px}
+ .empty{color:#8a94a3;text-align:center;padding:24px;font-size:13px}
+ dialog{border:none;border-radius:14px;padding:0;box-shadow:0 12px 40px rgba(0,0,0,.18);
+   max-width:520px;width:92%}
+ dialog::backdrop{background:rgba(20,26,34,.45)}
+ .dlg{padding:22px 24px}
+ .dlg h3{margin:0 0 14px;font-size:16px}
+ .fld{margin-bottom:11px}
+ .fld label{display:block;font-size:11.5px;color:#6b7684;margin-bottom:4px;font-weight:600}
+ .fld input,.fld select,.fld textarea{width:100%}
+ .dlg-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+ footer{margin-top:22px;color:#8a94a3;font-size:11.5px;line-height:1.75}
+ code{background:#eceff3;padding:1px 5px;border-radius:4px;font-size:11px}
+ .team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:11px}
+ .mcard{border:1px solid #e3e7ec;border-radius:10px;padding:13px 15px;cursor:pointer;
+   transition:.12s;background:#fff}
+ .mcard:hover{border-color:#3d8fd4;box-shadow:0 2px 10px rgba(61,143,212,.10)}
+ .mtop{display:flex;align-items:baseline;gap:7px;margin-bottom:3px}
+ .mname{font-size:15px;font-weight:700;letter-spacing:-.3px}
+ .mrole{font-size:10.5px;padding:2px 7px;border-radius:5px;background:#eef2f7;color:#4a5563;font-weight:600}
+ .maffil{font-size:11px;color:#8a94a3;margin-bottom:9px;min-height:14px}
+ .mstats{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;text-align:center}
+ .mstat b{display:block;font-size:17px;font-weight:700;letter-spacing:-.5px}
+ .mstat span{font-size:9.5px;color:#8a94a3}
+ .au{display:inline-block;font-size:10.5px;padding:2px 7px;border-radius:11px;
+   background:#eef2f7;color:#4a5563;margin:1px 3px 1px 0;font-weight:600;white-space:nowrap}
+ .au.first{background:#e8f1fb;color:#16548c} .au.corr{background:#e6f5ee;color:#1f7a5c}
+ .au-list{max-height:280px;overflow-y:auto;border:1px solid #e3e7ec;border-radius:9px}
+ .au-row{display:flex;align-items:center;gap:9px;padding:8px 11px;border-bottom:1px solid #f2f4f7}
+ .au-row:last-child{border-bottom:none}
+ .au-row label{flex:1;font-size:13px;cursor:pointer}
+ .au-row .pick{font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid #d5dbe3;
+   background:#fff;cursor:pointer;color:#6b7684}
+ .au-row .pick.on{background:#1c2430;color:#fff;border-color:#1c2430}
+ .noauthor{color:#c0c7d0;font-size:11px}
+</style></head><body><div class="wrap">
+
+<header>
+  <h1>🔬 구랩 연구 원장</h1>
+  <button class="btn ghost sm" onclick="forgetTok()" title="다른 사람 컴퓨터라면 꼭 눌러 지우세요">🔑 토큰 지우기</button>
+  <span class="save-state" id="ss">읽는 중…</span>
+</header>
+<div class="sub" id="meta"></div>
+
+<div class="kpis">
+    <div class="kpi"><div class="kl">진행 중</div>
+      <div class="kv" style="color:#1c2430" id="kpi-0">–</div></div>
+    <div class="kpi"><div class="kl">심사 라인</div>
+      <div class="kv" style="color:#3d8fd4" id="kpi-1">–</div></div>
+    <div class="kpi"><div class="kl">출판 완료</div>
+      <div class="kv" style="color:#1f7a5c" id="kpi-2">–</div></div>
+    <div class="kpi"><div class="kl">연구팀</div>
+      <div class="kv" style="color:#6b5ce0" id="kpi-3">–</div></div></div>
+
+<div class="row">
+  <div class="card"><h2>투고 상태</h2><div class="chart-box"><canvas id="c1"></canvas></div></div>
+  <div class="card"><h2>연구 주제 (제목 자동 분류)</h2>
+    <div class="chart-box"><canvas id="c2"></canvas></div></div>
+</div>
+
+<div class="tabs">
+  <button class="tab on" id="tabA" onclick="setTab('active')">진행 중</button>
+  <button class="tab" id="tabP" onclick="setTab('published')">출판 완료</button>
+  <button class="tab" id="tabT" onclick="setTab('team')">👥 연구팀</button>
+</div>
+
+<div class="card" id="paperCard">
+  <div class="tools">
+    <input type="search" id="q" placeholder="제목·저널·저자 검색">
+    <select id="fs"><option value="">전체 상태</option></select>
+    <select id="fm"><option value="">전체 팀원</option></select>
+    <button class="btn" onclick="openAdd()">+ 새 투고</button>
+  </div>
+  <table><thead id="th"></thead><tbody id="tb"></tbody></table>
+  <div class="empty" id="none" style="display:none">항목이 없습니다.</div>
+</div>
+
+<div class="card" id="teamCard" style="display:none">
+  <div class="tools">
+    <span style="font-size:12.5px;color:#6b7684">실적은 논문에서 자동 집계됩니다</span>
+    <button class="btn" style="margin-left:auto" onclick="openMem()">+ 팀원 추가</button>
+  </div>
+  <div id="teamGrid" class="team-grid"></div>
+  <div class="empty" id="teamNone" style="display:none">
+    팀원이 없습니다. 우측 상단에서 추가하세요.</div>
+</div>
+
+<footer>
+  원장은 <b>비공개 레포 kulab-data</b> 에 있습니다 — 이 페이지(공개 레포)에는 데이터가 들어 있지 않습니다.<br>맥의 CLI 도 같은 원장을 씁니다 — <code>python -m lab.gh_sync push|pull</code>.
+  구랩은 조회·분석·기록만 합니다(투고·제출 등 대외 행위는 보스).
+</footer>
+
+<dialog id="dlgAdd"><div class="dlg">
+  <h3>새 투고 등록</h3>
+  <div class="fld"><label>제목 *</label><textarea id="aT" rows="3"></textarea></div>
+  <div class="fld"><label>저널</label><input id="aJ" placeholder="예: Journal of Hazardous Materials"></div>
+  <div class="fld"><label>상태</label><select id="aS"></select></div>
+  <div class="fld"><label>투고일</label><input id="aD" type="date"></div>
+  <div class="dlg-btns">
+    <button class="btn ghost" onclick="dlgAdd.close()">취소</button>
+    <button class="btn" onclick="doAdd()">등록</button></div>
+</div></dialog>
+
+<dialog id="dlgPub"><div class="dlg">
+  <h3>🎉 출판 완료로 이관</h3>
+  <div class="sub" id="pTitle" style="margin-bottom:14px"></div>
+  <div class="fld"><label>저널 *</label><input id="pJ"></div>
+  <div class="fld"><label>게재일</label><input id="pD" type="date"></div>
+  <div class="fld"><label>DOI</label><input id="pI" placeholder="10.xxxx/xxxxx"></div>
+  <div class="dlg-btns">
+    <button class="btn ghost" onclick="dlgPub.close()">취소</button>
+    <button class="btn pub" onclick="doPub()">출판 기록으로 이관</button></div>
+</div></dialog>
+
+<dialog id="dlgMem"><div class="dlg">
+  <h3 id="mH">팀원 등록</h3>
+  <div class="fld"><label>이름 *</label><input id="mN"></div>
+  <div class="fld"><label>역할</label><input id="mR" placeholder="PI · 공동연구 · 대학원생 · 협력기관"></div>
+  <div class="fld"><label>소속</label><input id="mA"></div>
+  <div class="fld"><label>이메일</label><input id="mE"></div>
+  <div class="dlg-btns">
+    <button class="btn ghost" id="mDel" onclick="delMem()"
+      style="margin-right:auto;color:#c23b28">삭제</button>
+    <button class="btn ghost" onclick="dlgMem.close()">취소</button>
+    <button class="btn" onclick="doMem()">저장</button></div>
+</div></dialog>
+
+<dialog id="dlgAu"><div class="dlg">
+  <h3>저자 지정</h3>
+  <div class="sub" id="auTitle" style="margin-bottom:12px"></div>
+  <div id="auList" class="au-list"></div>
+  <div class="sub" style="margin-top:10px;font-size:11.5px">
+    체크=참여저자 · ①=제1저자 · ✉=교신저자 (각 1명)</div>
+  <div class="dlg-btns">
+    <button class="btn ghost" onclick="dlgAu.close()">취소</button>
+    <button class="btn" onclick="doAu()">저장</button></div>
+</div></dialog>
+
+<dialog id="dlgTok"><div class="dlg">
+  <h3>🔑 GitHub 토큰</h3>
+  <div class="sub" style="margin-bottom:12px;line-height:1.6">
+    원장은 <b>비공개 레포 kulab-data</b> 에 있습니다. 이 컴퓨터에서 한 번만
+    입력하면 브라우저에 저장됩니다(<code>localStorage</code>).
+    서버로 보내지 않습니다.<br>
+    발급: GitHub → Settings → Developer settings → Personal access tokens →
+    Fine-grained · Contents = Read and write.<br>
+    <b>남의 컴퓨터라면 나갈 때 「토큰 지우기」를 누르세요.</b></div>
+  <div class="fld"><label>토큰</label>
+    <input id="tkI" type="password" placeholder="github_pat_..." autocomplete="off"></div>
+  <div class="dlg-btns">
+    <button class="btn" onclick="saveTok()">저장하고 열기</button></div>
+</div></dialog>
+
+<script>
+const SCOLOR={"미지정": "#9aa4b2", "Preparing": "#8a94a3", "Submitted": "#e0a72e", "With Editor": "#6b5ce0", "Under Review": "#3d8fd4", "Major Revision": "#dc8a44", "Minor Revision": "#d4a244", "Accepted": "#2f9e78", "Rejected": "#dc5a44", "Transfer": "#6f8ba3", "Withdrawn": "#9aa4b2", "Published": "#1f7a5c"}, TCOLOR={"방사선·핵": "#e0a72e", "화학작용제": "#dc5a44", "PFAS·환경": "#3d8fd4", "ML·예측": "#6b5ce0", "정책·거버넌스": "#2f9e78", "바이오·의약": "#d4699f", "재난·안전": "#6f8ba3", "법과학·탐지": "#b08a1e", "기타": "#9aa4b2"}, STATUSES=["미지정", "Preparing", "Submitted", "With Editor", "Under Review", "Major Revision", "Minor Revision", "Accepted", "Rejected", "Transfer", "Withdrawn"];
+let DATA={active:[], published:[],
+           members:[], meta:{"updated":"","note":""}};
+let TAB='active', c1=null, c2=null;
+
+const ss=document.getElementById('ss');
+function state(t,cls){ ss.textContent=t; ss.className='save-state '+(cls||''); }
+
+/* ── 원장 ↔ 화면 : 저장소가 무엇이든 이 두 함수를 통과한다 ── */
+function ingest(j){
+  DATA.active=(j.active||[]).map(withTags);
+  DATA.published=(j.published||[]).map(withTags);
+  DATA.members=j.members||[];
+  DATA.meta={updated:j.updated||'', note:j.source_note||''};
+}
+function payload(){
+  return {version:3, updated:new Date().toISOString().slice(0,19),
+    members:DATA.members,
+    active:DATA.active.map(strip), published:DATA.published.map(strip),
+    source_note:DATA.meta.note};
+}
+/* 주제 태깅은 파이썬이 하지만, 새로 추가·재로드된 항목엔 없을 수 있다 —
+   화면이 비지 않게 최소 태깅을 여기서도 한다(라벨은 파이썬과 같은 8군). */
+const TKEYS={"방사선·핵":["radiation","radioactiv","gamma","nuclear","dose","핵"],
+ "화학작용제":["cwa","chemical weapon","novichok","nerve","화학무기","화학테러"],
+ "PFAS·환경":["pfas","fluorine","wastewater","disinfection"],
+ "ML·예측":["machine learning","foundation","zero-shot","docking","forecasting","benchmark"],
+ "정책·거버넌스":["governance","policy","arms control","대응방안","체계"],
+ "바이오·의약":["opioid","receptor","crispr","influenza","health"],
+ "재난·안전":["safety","hazard","emergency","uav","drone","monitoring"],
+ "법과학·탐지":["forensic","detection","sensor","spectrometr"]};
+function withTags(p){
+  if(p.topics&&p.topics.length) return p;
+  const t=(p.title||'').toLowerCase();
+  const hit=Object.keys(TKEYS).filter(k=>TKEYS[k].some(w=>t.includes(w)));
+  p.topics=hit.length?hit:['기타']; return p;
+}
+function strip(p){ const q={...p}; delete q.topics; return q; }
+
+/* ── 원장 입출력(GitHub) ──────────────────────────────────────────────
+   원장은 **비공개 레포** kulab-data 의 papers.json 이다. 이 페이지가 사는
+   레포(kulabdashboard)는 공개이므로 원장을 여기 담지 않는다.
+   토큰은 이 브라우저에만 저장된다(localStorage). 서버로 보내지 않는다.
+   레포는 커밋 이력을 스스로 보관하므로 별도 백업 파일이 필요 없다.
+   저장 전 원격 sha 를 다시 읽는다 — 다른 기기가 먼저 고쳤으면 덮지 않는다. */
+const DREPO='bisu9082/kulab-data', DPATH='papers.json';
+let TOK=localStorage.getItem('kulab_tok')||'';
+let SHA=null;
+async function gh(path,opt){
+  opt=opt||{};
+  const r=await fetch('https://api.github.com'+path,{...opt,headers:{
+    'Authorization':'Bearer '+TOK,'Accept':'application/vnd.github+json',
+    'X-GitHub-Api-Version':'2022-11-28'}});
+  if(r.status===401||r.status===403){
+    localStorage.removeItem('kulab_tok'); TOK='';
+    throw new Error('토큰이 거부됨 — 다시 입력하세요');
+  }
+  if(!r.ok) throw new Error('GitHub '+r.status+
+    (r.status===404?' (원장 레포 접근 불가 — 토큰 권한 확인)':''));
+  return r.json();
+}
+const b64d=s=>decodeURIComponent(escape(atob(s.replace(/\n/g,''))));
+const b64e=s=>btoa(unescape(encodeURIComponent(s)));
+function askTok(){ document.getElementById('tkI').value=''; dlgTok.showModal(); }
+async function saveTok(){
+  const v=document.getElementById('tkI').value.trim();
+  if(!v) return;
+  TOK=v; localStorage.setItem('kulab_tok',v); SHA=null;
+  dlgTok.close(); reload().catch(e=>state(e.message.slice(0,60),'err'));
+}
+function forgetTok(){
+  localStorage.removeItem('kulab_tok'); TOK=''; SHA=null;
+  state('토큰 삭제됨','err'); askTok();
+}
+async function reload(){
+  if(!TOK){ state('토큰 필요','err'); askTok(); return; }
+  state('읽는 중…','busy');
+  const f=await gh(`/repos/${DREPO}/contents/${DPATH}`);
+  SHA=f.sha;
+  ingest(JSON.parse(b64d(f.content)));
+  render(); state('최신 상태 ✓','ok');
+}
+async function persist(msg){
+  try{
+    if(!TOK){ askTok(); return; }
+    state('저장 중…','busy');
+    // 최신 sha 를 먼저 읽는다. 남이 고친 걸 조용히 덮어쓰지 않기 위해서다.
+    try{ SHA=(await gh(`/repos/${DREPO}/contents/${DPATH}`)).sha; }catch(e){ SHA=null; }
+    const body={message:(msg||'원장 갱신')+' (웹)',
+      content:b64e(JSON.stringify(payload(),null,1))};
+    if(SHA) body.sha=SHA;
+    const r=await gh(`/repos/${DREPO}/contents/${DPATH}`,
+      {method:'PUT',body:JSON.stringify(body)});
+    SHA=r.content.sha;
+    DATA.meta.updated=new Date().toISOString().slice(0,19);
+    state((msg||'저장됨')+' ✓','ok'); render();
+  }catch(e){ state('저장 실패: '+e.message.slice(0,60),'err'); }
+}
+
+
+/* ── 조작 ── */
+async function chgStatus(id,v){
+  const p=DATA.active.find(x=>x.id===id); if(!p) return;
+  const old=p.status; p.status=v; p.updated=new Date().toISOString().slice(0,10);
+  (p.history=p.history||[]).push({ts:new Date().toISOString().slice(0,19),
+    status:v, from:old, by:'ui'});
+  await persist(`${id} → ${v}`);
+}
+async function chgJournal(id,v){
+  const p=[...DATA.active,...DATA.published].find(x=>x.id===id); if(!p) return;
+  p.journal=v; await persist('저널 저장');
+}
+function openAdd(){
+  document.getElementById('aT').value='';
+  document.getElementById('aJ').value='';
+  document.getElementById('aD').value=new Date().toISOString().slice(0,10);
+  dlgAdd.showModal();
+}
+async function doAdd(){
+  const t=document.getElementById('aT').value.trim();
+  if(!t){ alert('제목을 입력하세요'); return; }
+  const used=new Set([...DATA.active,...DATA.published].map(p=>p.id));
+  let n=1; while(used.has('P'+String(n).padStart(3,'0'))) n++;
+  const id='P'+String(n).padStart(3,'0');
+  const st=document.getElementById('aS').value;
+  DATA.active.unshift({id, title:t, journal:document.getElementById('aJ').value.trim(),
+    status:st, submitted:document.getElementById('aD').value,
+    updated:new Date().toISOString().slice(0,10), note:'',
+    history:[{ts:new Date().toISOString().slice(0,19), status:st, by:'ui'}]});
+  dlgAdd.close(); await persist(`${id} 등록`);
+}
+let pubId=null;
+function openPub(id){
+  const p=DATA.active.find(x=>x.id===id); if(!p) return;
+  pubId=id;
+  document.getElementById('pTitle').textContent=p.title;
+  document.getElementById('pJ').value=p.journal||'';
+  document.getElementById('pD').value=new Date().toISOString().slice(0,10);
+  document.getElementById('pI').value='';
+  dlgPub.showModal();
+}
+async function doPub(){
+  const i=DATA.active.findIndex(x=>x.id===pubId); if(i<0) return;
+  const p=DATA.active.splice(i,1)[0];
+  p.status='Published'; p.journal=document.getElementById('pJ').value.trim();
+  p.published=document.getElementById('pD').value;
+  p.doi=document.getElementById('pI').value.trim();
+  p.updated=new Date().toISOString().slice(0,10);
+  (p.history=p.history||[]).push({ts:new Date().toISOString().slice(0,19),
+    status:'Published', by:'ui'});
+  DATA.published.unshift(p);
+  dlgPub.close(); await persist(`${p.id} 출판 이관`);
+}
+function setTab(t){
+  TAB=t;
+  document.getElementById('tabA').className='tab'+(t==='active'?' on':'');
+  document.getElementById('tabP').className='tab'+(t==='published'?' on':'');
+  document.getElementById('tabT').className='tab'+(t==='team'?' on':'');
+  document.getElementById('paperCard').style.display=t==='team'?'none':'';
+  document.getElementById('teamCard').style.display=t==='team'?'':'none';
+  render();
+}
+
+/* ── 연구팀 ── */
+let memId=null;
+function openMem(id){
+  memId=id||null;
+  const m=id?DATA.members.find(x=>x.id===id):null;
+  document.getElementById('mH').textContent=m?`팀원 수정 · ${m.id}`:'팀원 등록';
+  document.getElementById('mN').value=m?m.name:'';
+  document.getElementById('mR').value=m?(m.role||''):'';
+  document.getElementById('mA').value=m?(m.affil||''):'';
+  document.getElementById('mE').value=m?(m.email||''):'';
+  document.getElementById('mDel').style.display=m?'':'none';
+  dlgMem.showModal();
+}
+async function doMem(){
+  const name=document.getElementById('mN').value.trim();
+  if(!name){ alert('이름을 입력하세요'); return; }
+  const f={name, role:document.getElementById('mR').value.trim()||'연구원',
+    affil:document.getElementById('mA').value.trim(),
+    email:document.getElementById('mE').value.trim()};
+  if(memId){ Object.assign(DATA.members.find(x=>x.id===memId), f); }
+  else{
+    const used=new Set(DATA.members.map(m=>m.id));
+    let n=1; while(used.has('M'+String(n).padStart(2,'0'))) n++;
+    DATA.members.push({id:'M'+String(n).padStart(2,'0'), ...f, active:true,
+      joined:new Date().toISOString().slice(0,10)});
+  }
+  dlgMem.close(); await persist('팀원 저장');
+}
+async function delMem(){
+  if(!memId) return;
+  const used=[...DATA.active,...DATA.published]
+    .filter(p=>(p.authors||[]).includes(memId)).length;
+  if(used && !confirm(`이 팀원이 저자로 걸린 논문 ${used}건이 있습니다.\n`+
+    `삭제하면 그 논문의 저자 목록에서도 빠집니다. 진행할까요?`)) return;
+  DATA.members=DATA.members.filter(m=>m.id!==memId);
+  [...DATA.active,...DATA.published].forEach(p=>{
+    p.authors=(p.authors||[]).filter(a=>a!==memId);
+    if(p.first===memId) p.first='';
+    if(p.corr===memId) p.corr='';
+  });
+  dlgMem.close(); await persist('팀원 삭제');
+}
+function mstats(mid){
+  const act=DATA.active.filter(p=>(p.authors||[]).includes(mid));
+  const pub=DATA.published.filter(p=>(p.authors||[]).includes(mid));
+  const all=[...act,...pub];
+  const LIVE=['Submitted','With Editor','Under Review','Major Revision','Minor Revision'];
+  return {total:all.length, active:act.length, published:pub.length,
+    first:all.filter(p=>p.first===mid).length,
+    corr:all.filter(p=>p.corr===mid).length,
+    review:act.filter(p=>LIVE.includes(p.status)).length};
+}
+function renderTeam(){
+  const g=document.getElementById('teamGrid'); g.innerHTML='';
+  const ms=DATA.members.map(m=>({...m, s:mstats(m.id)}))
+    .sort((a,b)=>b.s.total-a.s.total||a.name.localeCompare(b.name));
+  ms.forEach(m=>{
+    const d=document.createElement('div');
+    d.className='mcard'; d.onclick=()=>openMem(m.id);
+    d.innerHTML=`<div class="mtop"><span class="mname">${esc(m.name)}</span>
+        <span class="mrole">${esc(m.role||'연구원')}</span></div>
+      <div class="maffil">${esc(m.affil||'')}</div>
+      <div class="mstats">
+        <div class="mstat"><b>${m.s.total}</b><span>총 논문</span></div>
+        <div class="mstat"><b style="color:#3d8fd4">${m.s.review}</b><span>심사중</span></div>
+        <div class="mstat"><b style="color:#1f7a5c">${m.s.published}</b><span>출판</span></div>
+        <div class="mstat"><b style="color:#16548c">${m.s.first}</b><span>제1저자</span></div>
+      </div>`;
+    g.appendChild(d);
+  });
+  document.getElementById('teamNone').style.display=ms.length?'none':'block';
+}
+
+/* ── 저자 지정 ── */
+let auId=null;
+function openAu(id){
+  const p=[...DATA.active,...DATA.published].find(x=>x.id===id); if(!p) return;
+  if(!DATA.members.length){ alert('먼저 연구팀 탭에서 팀원을 등록하세요.'); return; }
+  auId=id;
+  document.getElementById('auTitle').textContent=p.title;
+  const box=document.getElementById('auList'); box.innerHTML='';
+  DATA.members.forEach(m=>{
+    const on=(p.authors||[]).includes(m.id);
+    const r=document.createElement('div'); r.className='au-row';
+    r.innerHTML=`<input type="checkbox" id="au_${m.id}" ${on?'checked':''}>
+      <label for="au_${m.id}">${esc(m.name)}
+        <span style="color:#8a94a3;font-size:11px">${esc(m.role||'')}</span></label>
+      <button class="pick${p.first===m.id?' on':''}" data-k="first" data-m="${m.id}">①</button>
+      <button class="pick${p.corr===m.id?' on':''}" data-k="corr" data-m="${m.id}">✉</button>`;
+    box.appendChild(r);
+  });
+  box.querySelectorAll('.pick').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.k;
+    box.querySelectorAll(`.pick[data-k="${k}"]`).forEach(o=>{
+      if(o!==b) o.classList.remove('on'); });
+    b.classList.toggle('on');
+    if(b.classList.contains('on')){
+      const cb=document.getElementById('au_'+b.dataset.m); if(cb) cb.checked=true; }
+  });
+  dlgAu.showModal();
+}
+async function doAu(){
+  const p=[...DATA.active,...DATA.published].find(x=>x.id===auId); if(!p) return;
+  const box=document.getElementById('auList');
+  p.authors=DATA.members.filter(m=>document.getElementById('au_'+m.id).checked)
+    .map(m=>m.id);
+  const f=box.querySelector('.pick[data-k="first"].on');
+  const c=box.querySelector('.pick[data-k="corr"].on');
+  p.first=f?f.dataset.m:''; p.corr=c?c.dataset.m:'';
+  if(p.first&&!p.authors.includes(p.first)) p.authors.push(p.first);
+  if(p.corr&&!p.authors.includes(p.corr)) p.authors.push(p.corr);
+  dlgAu.close(); await persist(`${p.id} 저자 저장`);
+}
+function auHtml(p){
+  const ids=p.authors||[];
+  if(!ids.length) return '<span class="noauthor">미지정</span>';
+  return ids.map(id=>{
+    const m=DATA.members.find(x=>x.id===id); if(!m) return '';
+    const cls=p.first===id?' first':(p.corr===id?' corr':'');
+    const mk=p.first===id?'① ':(p.corr===id?'✉ ':'');
+    return `<span class="au${cls}">${mk}${esc(m.name)}</span>`;
+  }).join('');
+}
+
+/* ── 렌더 ── */
+function tagHtml(p){ return (p.topics||[]).map(t=>
+  `<span class="tag" style="background:${(TCOLOR[t]||'#9aa4b2')}1f;color:${TCOLOR[t]||'#6b7684'}">${t}</span>`).join(''); }
+function topicsOf(t){ return t; }
+
+function render(){
+  syncMemberFilter();
+  if(TAB==='team') renderTeam(); else renderPapers();
+
+  // KPI
+  const c={}; DATA.active.forEach(p=>c[p.status]=(c[p.status]||0)+1);
+  const live=['Submitted','With Editor','Under Review','Major Revision','Minor Revision']
+    .reduce((s,k)=>s+(c[k]||0),0);
+  setK(0,DATA.active.length); setK(1,live);
+  setK(2,DATA.published.length); setK(3,DATA.members.length);
+  document.getElementById('meta').textContent=
+    `원장 갱신 ${(DATA.meta.updated||'').replace('T',' ').slice(0,16)} · `+
+    `진행 ${DATA.active.length} · 출판 ${DATA.published.length}`;
+  drawCharts(c);
+}
+function renderPapers(){
+  const q=document.getElementById('q').value.trim().toLowerCase();
+  const fs=document.getElementById('fs').value;
+  const fm=document.getElementById('fm').value;
+  const src=(TAB==='active'?DATA.active:DATA.published);
+  const rows=src.filter(p=>{
+    const names=(p.authors||[]).map(id=>
+      (DATA.members.find(m=>m.id===id)||{}).name||'').join(' ');
+    const hay=((p.title||'')+' '+(p.journal||'')+' '+names).toLowerCase();
+    return (!q||hay.includes(q)) && (!fs||p.status===fs)
+        && (!fm||(p.authors||[]).includes(fm));
+  });
+  document.getElementById('th').innerHTML = TAB==='active'
+    ? '<tr><th></th><th>제목</th><th>저자</th><th>저널</th><th>상태</th><th></th></tr>'
+    : '<tr><th></th><th>제목</th><th>저자</th><th>저널</th><th>게재일</th><th>DOI</th></tr>';
+  const tb=document.getElementById('tb'); tb.innerHTML='';
+  rows.forEach(p=>{
+    const tr=document.createElement('tr');
+    const au=`<td style="max-width:180px"><span onclick="openAu('${p.id}')"
+        style="cursor:pointer" title="클릭해 저자 지정">${auHtml(p)}</span></td>`;
+    if(TAB==='active'){
+      const opts=STATUSES.map(s=>`<option${s===p.status?' selected':''}>${s}</option>`).join('');
+      tr.innerHTML=`<td class="no">${p.id}</td>
+        <td class="ttl">${esc(p.title)}<div style="margin-top:3px">${tagHtml(p)}</div></td>
+        ${au}
+        <td><input class="jr" value="${esc(p.journal||'')}"
+             onchange="chgJournal('${p.id}',this.value)" placeholder="저널"></td>
+        <td><select class="st" style="color:${SCOLOR[p.status]||'#4a5563'}"
+             onchange="chgStatus('${p.id}',this.value)">${opts}</select></td>
+        <td><button class="btn sm pub" onclick="openPub('${p.id}')">출판</button></td>`;
+    } else {
+      tr.innerHTML=`<td class="no">${p.id}</td>
+        <td class="ttl">${esc(p.title)}<div style="margin-top:3px">${tagHtml(p)}</div></td>
+        ${au}
+        <td><input class="jr" value="${esc(p.journal||'')}"
+             onchange="chgJournal('${p.id}',this.value)"></td>
+        <td>${esc(p.published||'')}</td>
+        <td style="font-size:11px;color:#6b7684">${esc(p.doi||'')}</td>`;
+    }
+    tb.appendChild(tr);
+  });
+  document.getElementById('none').style.display=rows.length?'none':'block';
+}
+function syncMemberFilter(){
+  const sel=document.getElementById('fm'); const cur=sel.value;
+  sel.innerHTML='<option value="">전체 팀원</option>'+
+    DATA.members.map(m=>`<option value="${m.id}">${esc(m.name)}</option>`).join('');
+  sel.value=cur;
+}
+function setK(i,v){ const e=document.getElementById('kpi-'+i); if(e) e.textContent=v; }
+function esc(s){ return String(s||'').replace(/[&<>"]/g,
+  m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+
+function drawCharts(c){
+  const labels=STATUSES.filter(s=>c[s]>0);
+  const ds=labels.map(s=>c[s]);
+  if(c1) c1.destroy();
+  c1=new Chart(document.getElementById('c1'),{type:'doughnut',
+    data:{labels,datasets:[{data:ds,backgroundColor:labels.map(s=>SCOLOR[s]||'#9aa4b2'),
+      borderColor:'#fff',borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'56%',
+      plugins:{legend:{position:'right',
+        labels:{color:'#4a5563',font:{size:11},boxWidth:10,padding:8}}}}});
+  const tc={}; DATA.active.forEach(p=>(p.topics||[]).forEach(t=>tc[t]=(tc[t]||0)+1));
+  const tl=Object.keys(tc).sort((a,b)=>tc[b]-tc[a]);
+  if(c2) c2.destroy();
+  c2=new Chart(document.getElementById('c2'),{type:'bar',
+    data:{labels:tl,datasets:[{data:tl.map(t=>tc[t]),
+      backgroundColor:tl.map(t=>TCOLOR[t]||'#9aa4b2'),borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#8a94a3',font:{size:10},precision:0},
+                  grid:{color:'#eef1f5'}},
+               y:{ticks:{color:'#4a5563',font:{size:10.5}},grid:{display:false}}}}});
+}
+
+/* ── 초기화 ── */
+STATUSES.forEach(s=>{
+  document.getElementById('fs').insertAdjacentHTML('beforeend',`<option>${s}</option>`);
+  document.getElementById('aS').insertAdjacentHTML('beforeend',
+    `<option${s==='Submitted'?' selected':''}>${s}</option>`);
+});
+document.getElementById('q').addEventListener('input',render);
+document.getElementById('fs').addEventListener('change',render);
+document.getElementById('fm').addEventListener('change',render);
+render();
+reload().catch(e=>state('원장 읽기 실패(내장 스냅샷 표시): '+e.message.slice(0,50),'err'));
+</script>
+</div></body></html>
